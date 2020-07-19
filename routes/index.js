@@ -159,6 +159,7 @@ router.get('/R2', function (req, res, next) {
     if (is_alive(k) != null)
     { keys[k].blocked =true;
       keys[k].last_blocked_on = Date.now();
+      DLL.addToTail(keys[k]);
     }
   
     if ((is_alive(k) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
