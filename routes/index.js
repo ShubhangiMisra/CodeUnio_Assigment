@@ -202,9 +202,12 @@ router.get('/R4/:key', function (req, res, next) {
 router.get('/R5/:key', function (req, res, next) {
   //res.render('index', { title: 'Alive keys' });
   let key = req.params.key;
-  keys[key].last_ref_on = Date.now();
+  
   if (is_alive(key) != null) {
+    keys[key].last_ref_on = Date.now();
     if( (keys[key].blocked && Date.now() - keys[key].last_blocked_on >= 60000) || !keys[key].blocked)
+    keys[key].blocked = false;
+    keys[key].last_blocked_on = Date.now();
     DLL.addToHead(key);
   }
   else{
