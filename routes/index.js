@@ -159,7 +159,12 @@ router.get('/R2', function (req, res, next) {
     keys[k].last_blocked_on = Date.now();
     
     console.log(k);
-  
+    if ((is_alive(k) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
+      keys[k].last_blocked_on = Date.now();
+      keys[k].blocked = false;
+      DLL.addToHead(keys[k]);
+      return res.json({ result: 'Key avilable', key: keys[k] });
+    }
     return res.json({ result: 'Key avilable', key: keys[k] });
   }
 
@@ -168,15 +173,15 @@ router.get('/R2', function (req, res, next) {
 
 router.get('/R3/:key', function (req, res, next) {
   //res.render('index', { title: 'Unblock keys' });
-  let key = req.params.key;
-  if (is_alive(key) != null) {
-    keys[key].blocked = false;
-    keys[key].last_blocked_on = null;
-    DLL.addToHead(keys[key]);
+  let k = req.params.key;
+  if (is_alive(k) != null) {
+    keys[k].blocked = false;
+    keys[k].last_blocked_on = null;
+    DLL.addToHead(keys[k]);
     }
-    if ((is_alive(key) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 6000)) {
+    if ((is_alive(k) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
       keys[k].last_blocked_on = Date.now();
-      keys[key].blocked = false;
+      keys[k].blocked = false;
       DLL.addToHead(keys[k]);
     }
 
@@ -197,12 +202,15 @@ router.get('/R4/:key', function (req, res, next) {
 router.get('/R5/:key', function (req, res, next) {
   //res.render('index', { title: 'Alive keys' });
   let key = req.params.key;
-  keys[key].last_ref_on = date.now();
+  keys[key].last_ref_on = Date.now();
   if (is_alive(key) != null) {
-    if( (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000) || !keys[k].blocked)
+    if( (keys[key].blocked && Date.now() - keys[key].last_blocked_on >= 60000) || !keys[key].blocked)
     DLL.addToHead(key);
   }
-
+  else{
+    return res.json({ result: 'Key was not Alived since 5 minutes hence deleted',key: key });
+  }
+  res.json({ result: 'Key Alive',key: key });
 });
 
 module.exports = router;
