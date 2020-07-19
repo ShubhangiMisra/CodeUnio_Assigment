@@ -6,7 +6,17 @@ const { UpgradeRequired } = require('http-errors');
 var router = express.Router();
 
 let keys = {} //Global map of keys(UID) and thier status
-
+let LOCK = false;
+//covering the race condition - ek baari mein ek hi request chalegi
+function wait_for_ll(request, response, next) {
+  
+  while (LOCK) {
+    continue;
+  }
+  LOCK = true;
+  next();
+}
+router.use(wait_for_ll);
 function create_status(id) {
   return { key: id, blocked: false, last_blocked_on: null, last_ref_on: Date.now() };
 }
@@ -117,7 +127,7 @@ LinkedList.prototype = {
 }
 
 function is_alive(key) {
-  if ( (Date.now() - keys[key].last_ref_on <= 300000)) {
+  if ((Date.now() - keys[key].last_ref_on <= 300000)) {
     return key;
   }
   else {
@@ -144,34 +154,34 @@ router.get('/R1', function (req, res, next) {
   keys[k] = create_status(k);
   DLL = DLL.addToHead(keys[k]);
   res.json({ result: 'New Key Generation - Success!', key: k });
-  
+
 });
 
 router.get('/R2', function (req, res, next) {
   //res.render('index', { title: 'Available keys to get' });
   /*this which fetch the available key with the head node of DLL head(which whose difference of current time and
   last blocked on is >= 60000 ms OR it 's last blocked is null - active queue is mainted)*/
-  if(DLL._head != null){
+  if (DLL._head != null) {
     k = DLL.deleteFromHead();
     //console.log(k);
     k = k.key;
     //console.log(k);
-    if (is_alive(k) != null)
-    { keys[k].blocked =true;
+    if (is_alive(k) != null) {
+      keys[k].blocked = true;
       keys[k].last_blocked_on = Date.now();
       DLL.addToTail(keys[k]);
     }
-  
-    if ((is_alive(k) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
+
+    if ((is_alive(k) != null) && (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
       keys[k].last_blocked_on = Date.now();
       keys[k].blocked = true;
       DLL.addToHead(keys[k]);
       return res.json({ result: 'Key avilable', key: keys[k] });
     }
     return res.json({ result: 'Key avilable', key: keys[k] });
-  
+
   }
-  
+
 
   res.sendStatus(404);
 });
@@ -183,12 +193,12 @@ router.get('/R3/:key', function (req, res, next) {
     keys[k].blocked = false;
     keys[k].last_blocked_on = null;
     DLL.addToHead(keys[k]);
-    }
-    if ((is_alive(k) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
-      keys[k].last_blocked_on = Date.now();
-      keys[k].blocked = false;
-      DLL.addToHead(keys[k]);
-    }
+  }
+  if ((is_alive(k) != null) && (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
+    keys[k].last_blocked_on = Date.now();
+    keys[k].blocked = false;
+    DLL.addToHead(keys[k]);
+  }
 
   res.json({ result: 'Key Released' });
 });
@@ -207,18 +217,18 @@ router.get('/R4/:key', function (req, res, next) {
 router.get('/R5/:key', function (req, res, next) {
   //res.render('index', { title: 'Alive keys' });
   let key = req.params.key;
-  
+
   if (is_alive(key) != null) {
     keys[key].last_ref_on = Date.now();
-    if( (keys[key].blocked && Date.now() - keys[key].last_blocked_on >= 60000) || !keys[key].blocked)
-    keys[key].blocked = false;
+    if ((keys[key].blocked && Date.now() - keys[key].last_blocked_on >= 60000) || !keys[key].blocked)
+      keys[key].blocked = false;
     keys[key].last_blocked_on = Date.now();
     DLL.addToHead(key);
   }
-  else{
-    return res.json({ result: 'Key was not Alived since 5 minutes hence deleted',key: key });
+  else {
+    return res.json({ result: 'Key was not Alived since 5 minutes hence deleted', key: key });
   }
-  res.json({ result: 'Key Alive',key: key });
+  res.json({ result: 'Key Alive', key: key });
 });
 
 module.exports = router;
