@@ -151,22 +151,26 @@ router.get('/R2', function (req, res, next) {
   //res.render('index', { title: 'Available keys to get' });
   /*this which fetch the available key with the head node of DLL head(which whose difference of current time and
   last blocked on is >= 60000 ms OR it 's last blocked is null - active queue is mainted)*/
-  let k = DLL.deleteFromHead();
-  console.log(k);
-  if (k != null) {
+  if(DLL._head != null){
+    k = DLL.deleteFromHead();
+    //console.log(k);
     k = k.key;
-    keys[k].blocked =true;
-    keys[k].last_blocked_on = Date.now();
-    
-    console.log(k);
+    //console.log(k);
+    if (is_alive(k) != null)
+    { keys[k].blocked =true;
+      keys[k].last_blocked_on = Date.now();
+    }
+  
     if ((is_alive(k) != null)&& (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000)) {
       keys[k].last_blocked_on = Date.now();
-      keys[k].blocked = false;
+      keys[k].blocked = true;
       DLL.addToHead(keys[k]);
       return res.json({ result: 'Key avilable', key: keys[k] });
     }
     return res.json({ result: 'Key avilable', key: keys[k] });
+  
   }
+  
 
   res.sendStatus(404);
 });
