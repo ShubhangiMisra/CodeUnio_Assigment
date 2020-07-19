@@ -117,7 +117,7 @@ LinkedList.prototype = {
 }
 
 function is_alive(key) {
-  if ( (Date.now() - keys[key].last_ref_on <= 30000)) {
+  if ( (Date.now() - keys[key].last_ref_on <= 300000)) {
     return key;
   }
   else {
@@ -154,7 +154,7 @@ router.get('/R2', function (req, res, next) {
   let k = DLL.deleteFromHead();
   console.log(k);
   if (k != null) {
-    k = k.data.key;
+    k = k.key;
     keys[k].blocked =true;
     keys[k].last_blocked_on = Date.now();
     
@@ -199,7 +199,7 @@ router.get('/R5/:key', function (req, res, next) {
   let key = req.params.key;
   keys[key].last_ref_on = date.now();
   if (is_alive(key) != null) {
-    if( (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 6000) || !keys[k].blocked)
+    if( (keys[k].blocked && Date.now() - keys[k].last_blocked_on >= 60000) || !keys[k].blocked)
     DLL.addToHead(key);
   }
 
