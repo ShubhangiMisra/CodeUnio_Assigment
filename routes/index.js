@@ -204,6 +204,4 @@ router.get('/R5/:key', function (req, res, next) {
 
 });
 
-const app = express();
-app.use("/", router);
-app.listen(8080);
+module.exports = router;
